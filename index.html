@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مسارات</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZEybu0HFeAlXmZSyjBU-sY_9LZAICHs8",
+      authDomain: "msarat-ly1.firebaseapp.com",
+      databaseURL: "https://msarat-ly1-default-rtdb.firebaseio.com",
+      projectId: "msarat-ly1",
+      storageBucket: "msarat-ly1.firebasestorage.app",
+      messagingSenderId: "279826996190",
+      appId: "1:279826996190:web:bd10763a61e51e85cb1b4f"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
+  </style>
+</head>
+<body class="bg-gray-50 p-4 text-right font-sans">
+
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-8 mt-6">
+        <h2 class="text-3xl font-bold text-blue-800 mb-2">شركاء مسارات</h2>
+        <p class="text-gray-600">اختر الورشة لمتابعة حالة صيانة سيارتك</p>
+    </div>
+
+    <div id="workshopView">
+        <div class="relative max-w-xl mx-auto mb-8">
+            <input type="text" id="workshopSearch" onkeyup="filterWorkshops()" 
+                   class="w-full p-4 pr-12 rounded-2xl shadow-md border-none focus:ring-2 focus:ring-blue-500 outline-none" 
+                   placeholder="ابحث عن اسم الورشة...">
+            <i class="ph ph-magnifying-glass absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-blue-500"></i>
+        </div>
+        <div id="workshopsList" class="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
+        </div>
+    </div>
+
+    <div id="carsView" class="hidden animate-fadeIn">
+        <div class="flex items-center justify-between mb-6 bg-white p-4 rounded-xl shadow-sm">
+            <button onclick="backToWorkshops()" class="flex items-center gap-2 text-blue-600 font-bold hover:bg-blue-50 px-3 py-1 rounded-lg transition">
+                <i class="ph ph-arrow-right"></i> رجوع للورش
+            </button>
+            <h3 id="selectedWorkshopTitle" class="text-xl font-bold text-gray-800"></h3>
+        </div>
+
+        <div class="relative max-w-xl mx-auto mb-8">
+            <input type="text" id="carSearch" onkeyup="filterCars()" 
+                   class="w-full p-4 pr-12 rounded-2xl shadow-md border-none focus:ring-2 focus:ring-green-500 outline-none" 
+                   placeholder="ابحث برقم السيارة...">
+            <i class="ph ph-car absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-green-500"></i>
+        </div>
+
+        <div id="carsList" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        </div>
+    </div>
+  </div>
+
+  <div id="detailsModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-2xl w-full animate-fadeIn max-h-[90vh] overflow-y-auto">
+      <h2 id="modalCarNumber" class="text-2xl font-bold mb-4 text-center text-gray-800 border-b pb-2"></h2>
+      
+      <div id="passwordSection">
+          <p class="text-sm text-gray-500 mb-2">يرجى إدخال كلمة سر السيارة للمتابعة:</p>
+          <input id="carPassInput" type="password" class="w-full p-3 border-2 rounded-xl text-center text-xl font-bold tracking-widest focus:border-blue-500 outline-none mb-4" placeholder="******">
+          <button onclick="verifyCarPassword()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">عرض حالة السيارة</button>
+      </div>
+
+      <div id="dataSection" class="hidden space-y-4">
+          <div class="bg-blue-50 p-4 rounded-xl text-gray-700 border border-blue-100 space-y-2">
+              <p><strong>الموديل:</strong> <span id="resModel"></span></p>
+              <p><strong>التاريخ:</strong> <span id="resDate"></span></p>
+              <p class="text-center pt-2">
+                  <span id="resStatus" class="px-4 py-1 rounded-full text-white font-bold text-sm"></span>
+              </p>
+          </div>
+          
+          <!-- عرض الصور حسب الحالة -->
+          <div id="imagesSection" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+            <div id="waitingImageContainer" class="border rounded-xl p-2 hidden">
+              <h4 class="font-bold text-yellow-600 mb-2 text-center">⏳ قيد الانتظار</h4>
+              <img id="waitingImage" src="" class="w-full h-32 object-cover rounded-lg">
+            </div>
+            <div id="maintenanceImageContainer" class="border rounded-xl p-2 hidden">
+              <h4 class="font-bold text-blue-600 mb-2 text-center">🔧 قيد الصيانة</h4>
+              <img id="maintenanceImage" src="" class="w-full h-32 object-cover rounded-lg">
+            </div>
+            <div id="readyImageContainer" class="border rounded-xl p-2 hidden">
+              <h4 class="font-bold text-green-600 mb-2 text-center">✅ جاهزة</h4>
+              <img id="readyImage" src="" class="w-full h-32 object-cover rounded-lg">
+            </div>
+          </div>
+          
+          <button onclick="closeModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-xl font-bold">إغلاق</button>
+      </div>
+      
+      <button id="cancelBtn" onclick="closeModal()" class="w-full mt-2 text-gray-400 text-sm">إلغاء</button>
+    </div>
+  </div>
+
+  <script>
+    let allWorkshops = {};
+    let currentWorkshopId = null;
+    let currentCarKey = null;
+
+    // تحميل الورش عند الفتح
+    function loadWorkshops() {
+      db.ref("التصنيفات").on("value", snap => {
+        allWorkshops = snap.val() || {};
+        renderWorkshops(allWorkshops);
+      });
+    }
+
+    function renderWorkshops(data) {
+      const list = document.getElementById("workshopsList");
+      list.innerHTML = "";
+      for (let id in data) {
+        const div = document.createElement("div");
+        div.className = "bg-white p-6 rounded-2xl shadow-md border-r-4 border-blue-500 hover:shadow-lg cursor-pointer transition transform hover:-translate-y-1";
+        div.innerHTML = `<h3 class="text-xl font-bold text-gray-800">${data[id].name}</h3>
+                         <p class="text-sm text-gray-400 mt-1">اضغط لعرض السيارات</p>`;
+        div.onclick = () => openWorkshop(id, data[id].name);
+        list.appendChild(div);
+      }
+    }
+
+    function filterWorkshops() {
+      const term = document.getElementById("workshopSearch").value.toLowerCase();
+      const filtered = {};
+      for (let id in allWorkshops) {
+        if (allWorkshops[id].name.toLowerCase().includes(term)) filtered[id] = allWorkshops[id];
+      }
+      renderWorkshops(filtered);
+    }
+
+    function openWorkshop(id, name) {
+      currentWorkshopId = id;
+      document.getElementById("workshopView").classList.add("hidden");
+      document.getElementById("carsView").classList.remove("hidden");
+      document.getElementById("selectedWorkshopTitle").innerText = name;
+      renderCars();
+    }
+
+    function renderCars() {
+      const list = document.getElementById("carsList");
+      list.innerHTML = "";
+      const cars = allWorkshops[currentWorkshopId].cars || {};
+      const term = document.getElementById("carSearch").value.trim();
+
+      for (let key in cars) {
+        if (term && !cars[key].number.includes(term)) continue;
+        
+        const div = document.createElement("div");
+        div.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center hover:border-green-400 cursor-pointer transition";
+        div.innerHTML = `<div class="text-lg font-bold text-gray-700">🚗 ${cars[key].number}</div>`;
+        div.onclick = () => openCarModal(key, cars[key].number);
+        list.appendChild(div);
+      }
+    }
+
+    function filterCars() { renderCars(); }
+
+    function backToWorkshops() {
+      document.getElementById("carsView").classList.add("hidden");
+      document.getElementById("workshopView").classList.remove("hidden");
+      document.getElementById("carSearch").value = "";
+    }
+
+    function openCarModal(key, number) {
+      currentCarKey = key;
+      document.getElementById("modalCarNumber").innerText = "سيارة رقم: " + number;
+      document.getElementById("detailsModal").classList.remove("hidden");
+      document.getElementById("passwordSection").classList.remove("hidden");
+      document.getElementById("dataSection").classList.add("hidden");
+      document.getElementById("cancelBtn").classList.remove("hidden");
+      document.getElementById("carPassInput").value = "";
+    }
+
+    function verifyCarPassword() {
+      const input = document.getElementById("carPassInput").value.trim();
+      const car = allWorkshops[currentWorkshopId].cars[currentCarKey];
+
+      if (input === car.passwordCar) {
+        document.getElementById("passwordSection").classList.add("hidden");
+        document.getElementById("cancelBtn").classList.add("hidden");
+        document.getElementById("dataSection").classList.remove("hidden");
+        
+        document.getElementById("resModel").innerText = car.model;
+        document.getElementById("resDate").innerText = car.date;
+        
+        const statusEl = document.getElementById("resStatus");
+        statusEl.innerText = car.status;
+        statusEl.className = "px-4 py-1 rounded-full text-white font-bold text-sm " + 
+          (car.status === "جاهزة" ? "bg-green-500" : car.status === "قيد الصيانة" ? "bg-blue-500" : "bg-yellow-500");
+        
+        // عرض الصور حسب الحالة
+        const images = car.images || { waiting: "", maintenance: "", ready: "" };
+        
+        // إخفاء جميع حاويات الصور أولاً
+        document.getElementById("waitingImageContainer").classList.add("hidden");
+        document.getElementById("maintenanceImageContainer").classList.add("hidden");
+        document.getElementById("readyImageContainer").classList.add("hidden");
+        
+        // عرض الصور الموجودة فقط
+        if (images.waiting) {
+          document.getElementById("waitingImage").src = images.waiting;
+          document.getElementById("waitingImageContainer").classList.remove("hidden");
+        }
+        
+        if (images.maintenance) {
+          document.getElementById("maintenanceImage").src = images.maintenance;
+          document.getElementById("maintenanceImageContainer").classList.remove("hidden");
+        }
+        
+        if (images.ready) {
+          document.getElementById("readyImage").src = images.ready;
+          document.getElementById("readyImageContainer").classList.remove("hidden");
+        }
+      } else {
+        alert("❌ كلمة السر غير صحيحة");
+      }
+    }
+
+    function closeModal() {
+      document.getElementById("detailsModal").classList.add("hidden");
+    }
+
+    window.onload = loadWorkshops;
+  </script>
+</body>
+</html>
