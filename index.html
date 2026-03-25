@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ورشة+</title>
+  <title>ورشة+ | تتبع حالة سيارتك</title>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <script>
@@ -52,101 +52,150 @@
       top: 20px;
       left: 20px;
       z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    .support-badge.hidden {
+      display: none;
+    }
+    .back-support-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out forwards;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.5rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: bold;
+      font-size: 1rem;
     }
   </style>
 </head>
-<body class="bg-gray-50 p-4 text-right font-sans">
+<body class="bg-gradient-to-br from-blue-50 to-gray-100 min-h-screen p-4 text-right font-sans">
 
   <!-- زر مركز الدعم -->
-  <div class="support-badge">
+  <div class="support-badge" id="supportButton">
     <button onclick="openSupportModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition transform hover:scale-105">
       <i class="ph ph-headset text-xl"></i>
       <span class="font-bold">مركز الدعم</span>
     </button>
   </div>
 
-  <div class="max-w-4xl mx-auto">
-    <div class="text-center mb-8 mt-6">
-        <h2 class="text-3xl font-bold text-blue-800 mb-2">ورشة+</h2>
-        <p class="text-gray-600">اختر الورشة لمتابعة حالة صيانة سيارتك</p>
-    </div>
-
-    <div id="workshopView">
-        <div class="relative max-w-xl mx-auto mb-8">
-            <input type="text" id="workshopSearch" onkeyup="filterWorkshops()" 
-                   class="w-full p-4 pr-12 rounded-2xl shadow-md border-none focus:ring-2 focus:ring-blue-500 outline-none" 
-                   placeholder="ابحث عن اسم الورشة...">
-            <i class="ph ph-magnifying-glass absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-blue-500"></i>
-        </div>
-        <div id="workshopsList" class="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
-        </div>
-    </div>
-
-    <div id="carsView" class="hidden animate-fadeIn">
-        <div class="flex items-center justify-between mb-6 bg-white p-4 rounded-xl shadow-sm">
-            <button onclick="backToWorkshops()" class="flex items-center gap-2 text-blue-600 font-bold hover:bg-blue-50 px-3 py-1 rounded-lg transition">
-                <i class="ph ph-arrow-right"></i> رجوع للورش
-            </button>
-            <h3 id="selectedWorkshopTitle" class="text-xl font-bold text-gray-800"></h3>
-        </div>
-
-        <div class="relative max-w-xl mx-auto mb-8">
-            <input type="text" id="carSearch" onkeyup="filterCars()" 
-                   class="w-full p-4 pr-12 rounded-2xl shadow-md border-none focus:ring-2 focus:ring-green-500 outline-none" 
-                   placeholder="ابحث برقم السيارة...">
-            <i class="ph ph-car absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-green-500"></i>
-        </div>
-
-        <div id="carsList" class="grid grid-cols-2 md:grid-cols-3 gap-4">
-        </div>
-    </div>
+  <!-- زر العودة للصفحة الرئيسية (يظهر عند فتح الدعم) -->
+  
   </div>
 
-  <div id="detailsModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-2xl w-full animate-fadeIn max-h-[90vh] overflow-y-auto">
-      <h2 id="modalCarNumber" class="text-2xl font-bold mb-4 text-center text-gray-800 border-b pb-2"></h2>
-      
-      <div id="passwordSection">
-          <p class="text-sm text-gray-500 mb-2">يرجى إدخال كلمة سر السيارة للمتابعة:</p>
-          <input id="carPassInput" type="password" class="w-full p-3 border-2 rounded-xl text-center text-xl font-bold tracking-widest focus:border-blue-500 outline-none mb-4" placeholder="****">
-          <button onclick="verifyCarPassword()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">عرض حالة السيارة</button>
-      </div>
+  <div class="max-w-2xl mx-auto">
+    <div class="text-center mb-8 mt-12">
+        <div class="inline-block bg-blue-100 p-3 rounded-full mb-3">
+          <i class="ph ph-wrench text-4xl text-blue-600"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-blue-800 mb-2">ورشة+</h1>
+        <p class="text-gray-600">أدخل رقم سيارتك وكلمة السر لمتابعة حالة الصيانة</p>
+    </div>
 
-      <div id="dataSection" class="hidden space-y-4">
-          <div class="bg-blue-50 p-4 rounded-xl text-gray-700 border border-blue-100 space-y-2">
-              <p><strong>الموديل:</strong> <span id="resModel"></span></p>
-              <p><strong>تاريخ الإستلام:</strong> <span id="resDate"></span></p>
-              <p class="text-center pt-2">
-                  <span id="resStatus" class="px-4 py-1 rounded-full text-white font-bold text-sm"></span>
-              </p>
+    <!-- واجهة البحث عن السيارة -->
+    <div id="searchView" class="bg-white rounded-2xl shadow-xl p-6 animate-fadeIn">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+            <i class="ph ph-car text-blue-500"></i>
+            رقم السيارة
+          </label>
+          <input type="text" id="searchCarNumber" 
+                 class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-lg"
+                 placeholder="مثال:12345">
+        </div>
+        <div>
+          <label class="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+            <i class="ph ph-key text-blue-500"></i>
+            كلمة السر
+          </label>
+          <input type="password" id="searchCarPassword" 
+                 class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition text-lg"
+                 placeholder="أدخل كلمة السر المكونة من 4 أرقام">
+        </div>
+        <button onclick="searchCar()" 
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-md">
+          <i class="ph ph-magnifying-glass text-xl"></i>
+          بحث عن السيارة
+        </button>
+      </div>
+      
+      <div class="mt-6 text-center text-sm text-gray-400 border-t pt-4">
+        <i class="ph ph-shield-check"></i>
+        بياناتك آمنة ومشفرة
+      </div>
+    </div>
+
+    <!-- عرض تفاصيل السيارة بعد البحث -->
+    <div id="carDetailsView" class="hidden bg-white rounded-2xl shadow-xl overflow-hidden animate-fadeIn">
+      <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
+        <div class="flex justify-between items-center">
+          <button onclick="backToSearch()" class="flex items-center gap-2 text-white hover:text-blue-100 transition">
+            <i class="ph ph-arrow-right text-xl"></i>
+            بحث جديد
+          </button>
+          <h2 class="text-xl font-bold flex items-center gap-2">
+            <i class="ph ph-car"></i>
+            <span id="detailsCarNumber"></span>
+          </h2>
+        </div>
+      </div>
+      
+      <div class="p-6 space-y-5">
+        <!-- معلومات السيارة الأساسية -->
+        <div class="bg-gray-50 rounded-xl p-4 space-y-3">
+          <div class="flex justify-between items-center border-b pb-2">
+            <span class="text-gray-500">الموديل</span>
+            <span id="detailsModel" class="font-bold text-gray-800">---</span>
           </div>
-          
-          <!-- عرض الصور حسب الحالة -->
-          <div id="imagesSection" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-            <div id="waitingImageContainer" class="border rounded-xl p-2 hidden">
-              <h4 class="font-bold text-yellow-600 mb-2 text-center">⏳ قيد الانتظار</h4>
+          <div class="flex justify-between items-center border-b pb-2">
+            <span class="text-gray-500">تاريخ الاستلام</span>
+            <span id="detailsDate" class="font-bold text-gray-800">---</span>
+          </div>
+          <div class="flex justify-between items-center pt-2">
+            <span class="text-gray-500">الحالة</span>
+            <span id="detailsStatus" class="status-badge"></span>
+          </div>
+        </div>
+
+        <!-- صور الحالات -->
+        <div>
+          <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <i class="ph ph-image"></i>
+            صور حالة السيارة
+          </h3>
+          <div id="imagesSection" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div id="waitingImageContainer" class="border rounded-xl p-3 hidden bg-yellow-50">
+              <h4 class="font-bold text-yellow-600 mb-2 text-center flex items-center justify-center gap-1">
+                <i class="ph ph-clock"></i> قيد الانتظار
+              </h4>
               <img id="waitingImage" src="" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="openFullImage(this.src)">
             </div>
-            <div id="maintenanceImageContainer" class="border rounded-xl p-2 hidden">
-              <h4 class="font-bold text-blue-600 mb-2 text-center">🔧 قيد الصيانة</h4>
+            <div id="maintenanceImageContainer" class="border rounded-xl p-3 hidden bg-blue-50">
+              <h4 class="font-bold text-blue-600 mb-2 text-center flex items-center justify-center gap-1">
+                <i class="ph ph-wrench"></i> قيد الصيانة
+              </h4>
               <img id="maintenanceImage" src="" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="openFullImage(this.src)">
             </div>
-            <div id="readyImageContainer" class="border rounded-xl p-2 hidden">
-              <h4 class="font-bold text-green-600 mb-2 text-center">✅ جاهزة</h4>
+            <div id="readyImageContainer" class="border rounded-xl p-3 hidden bg-green-50">
+              <h4 class="font-bold text-green-600 mb-2 text-center flex items-center justify-center gap-1">
+                <i class="ph ph-check-circle"></i> جاهزة للاستلام
+              </h4>
               <img id="readyImage" src="" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="openFullImage(this.src)">
             </div>
           </div>
+        </div>
 
-          <!-- زر الدردشة -->
-          <button onclick="openChat()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition transform hover:scale-105 flex items-center justify-center gap-2">
-            <i class="ph ph-chat-circle text-xl"></i>
-            دردشة مع الإدارة
-          </button>
-          
-          <button onclick="closeModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-xl font-bold">إغلاق</button>
+        <!-- زر الدردشة مع الإدارة -->
+        <button onclick="openChat()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-md">
+          <i class="ph ph-chat-circle text-xl"></i>
+          دردشة مع الإدارة
+        </button>
       </div>
-      
-      <button id="cancelBtn" onclick="closeModal()" class="w-full mt-2 text-gray-400 text-sm">إلغاء</button>
     </div>
   </div>
 
@@ -198,7 +247,7 @@
             <i class="ph ph-headset"></i>
             مركز الدعم الفني
           </h3>
-          <button onclick="closeSupportModal()" class="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
+          <button onclick="closeSupportModalAndShowButton()" class="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
         </div>
 
         <div class="bg-red-50 p-4 rounded-xl mb-6">
@@ -207,8 +256,9 @@
 
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-2">رقم الهاتف</label>
+            <label class="block text-sm font-bold text-gray-700 mb-2">رقم الهاتف (ليبي)</label>
             <input type="tel" id="supportPhone" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-red-500 outline-none" placeholder="09xxxxxxxx">
+            <p class="text-xs text-gray-500 mt-1">مثال: 0912345678</p>
           </div>
           <div>
             <label class="block text-sm font-bold text-gray-700 mb-2">نوع المشكلة</label>
@@ -232,16 +282,15 @@
   </div>
 
   <script>
-    let allWorkshops = {};
     let currentWorkshopId = null;
     let currentCarKey = null;
-    let currentCarPassword = null;
+    let currentCarData = null;
     let chatListener = null;
 
     // دالة لعرض التنبيهات
     function showAlert(message, type = 'success') {
       const alertDiv = document.createElement('div');
-      alertDiv.className = `fixed top-4 right-4 p-4 rounded-xl shadow-2xl z-[100] animate-slideIn flex items-center gap-3 ${
+      alertDiv.className = `fixed top-20 right-4 p-4 rounded-xl shadow-2xl z-[100] animate-slideIn flex items-center gap-3 ${
         type === 'success' ? 'bg-green-500' : 
         type === 'error' ? 'bg-red-500' : 
         'bg-yellow-500'
@@ -259,158 +308,189 @@
       }, 3000);
     }
 
-    function loadWorkshops() {
-      db.ref("التصنيفات").on("value", snap => {
-        allWorkshops = snap.val() || {};
-        renderWorkshops(allWorkshops);
-      });
+    // فتح مودال الدعم مع إخفاء الزر الأصلي
+    function openSupportModal() {
+      document.getElementById("supportModal").classList.remove("hidden");
+      document.getElementById("supportButton").classList.add("hidden");
+      
+      // إنشاء زر العودة إذا لم يكن موجوداً
+      let backBtn = document.getElementById("backToMainBtn");
+      if (backBtn) {
+        backBtn.classList.remove("hidden");
+        backBtn.style.position = "fixed";
+        backBtn.style.top = "20px";
+        backBtn.style.left = "20px";
+        backBtn.style.zIndex = "1000";
+      }
     }
-
-    function renderWorkshops(data) {
-      const list = document.getElementById("workshopsList");
-      list.innerHTML = "";
-      if (Object.keys(data).length === 0) {
-        list.innerHTML = '<p class="text-center text-gray-400 col-span-2 py-8">لا توجد ورش متاحة</p>';
+    
+    // إغلاق مودال الدعم وإظهار الزر الأصلي
+    function closeSupportModalAndShowButton() {
+      document.getElementById("supportModal").classList.add("hidden");
+      document.getElementById("supportButton").classList.remove("hidden");
+      document.getElementById("backToMainBtn").classList.add("hidden");
+    }
+    
+    // البحث عن السيارة عبر جميع الورش
+    async function searchCar() {
+      const carNumber = document.getElementById("searchCarNumber").value.trim();
+      const carPassword = document.getElementById("searchCarPassword").value.trim();
+      
+      if (!carNumber) {
+        showAlert('الرجاء إدخال رقم السيارة', 'error');
         return;
       }
-      for (let id in data) {
-        const div = document.createElement("div");
-        div.className = "bg-white p-6 rounded-2xl shadow-md border-r-4 border-blue-500 hover:shadow-lg cursor-pointer transition transform hover:-translate-y-1";
-        div.innerHTML = `<h3 class="text-xl font-bold text-gray-800">${data[id].name}</h3>
-                         <p class="text-sm text-gray-400 mt-1">اضغط لعرض السيارات</p>`;
-        div.onclick = () => openWorkshop(id, data[id].name);
-        list.appendChild(div);
-      }
-    }
-
-    function filterWorkshops() {
-      const term = document.getElementById("workshopSearch").value.toLowerCase();
-      const filtered = {};
-      for (let id in allWorkshops) {
-        if (allWorkshops[id].name.toLowerCase().includes(term)) filtered[id] = allWorkshops[id];
-      }
-      renderWorkshops(filtered);
-    }
-
-    function openWorkshop(id, name) {
-      currentWorkshopId = id;
-      document.getElementById("workshopView").classList.add("hidden");
-      document.getElementById("carsView").classList.remove("hidden");
-      document.getElementById("selectedWorkshopTitle").innerText = name;
-      renderCars();
-    }
-
-    function renderCars() {
-      const list = document.getElementById("carsList");
-      list.innerHTML = "";
-      const cars = allWorkshops[currentWorkshopId]?.cars || {};
-      const term = document.getElementById("carSearch").value.trim();
-
-      if (Object.keys(cars).length === 0) {
-        list.innerHTML = '<p class="text-center text-gray-400 col-span-3 py-8">لا توجد سيارات في هذه الورشة</p>';
+      
+      if (!carPassword) {
+        showAlert('الرجاء إدخال كلمة السر', 'error');
         return;
       }
-
-      for (let key in cars) {
-        if (term && !cars[key].number.includes(term)) continue;
+      
+      // إظهار مؤشر تحميل
+      const searchBtn = document.querySelector('#searchView button');
+      const originalText = searchBtn.innerHTML;
+      searchBtn.innerHTML = '<i class="ph ph-spinner ph-spin text-xl"></i> جاري البحث...';
+      searchBtn.disabled = true;
+      
+      try {
+        // جلب جميع الورش
+        const workshopsSnap = await db.ref("التصنيفات").once("value");
+        const workshops = workshopsSnap.val() || {};
         
-        const div = document.createElement("div");
-        div.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center hover:border-green-400 cursor-pointer transition transform hover:scale-105";
-        div.innerHTML = `<div class="text-lg font-bold text-gray-700">🚗 ${cars[key].number}</div>`;
-        div.onclick = () => openCarModal(key, cars[key].number, cars[key].passwordCar);
-        list.appendChild(div);
+        let foundWorkshopId = null;
+        let foundCarKey = null;
+        let foundCar = null;
+        
+        // البحث في كل ورشة عن السيارة المطابقة للرقم وكلمة السر
+        for (const workshopId in workshops) {
+          const cars = workshops[workshopId].cars || {};
+          for (const carKey in cars) {
+            const car = cars[carKey];
+            if (car.number === carNumber && car.passwordCar === carPassword) {
+              foundWorkshopId = workshopId;
+              foundCarKey = carKey;
+              foundCar = car;
+              break;
+            }
+          }
+          if (foundWorkshopId) break;
+        }
+        
+        if (foundWorkshopId && foundCar) {
+          currentWorkshopId = foundWorkshopId;
+          currentCarKey = foundCarKey;
+          currentCarData = foundCar;
+          
+          // عرض تفاصيل السيارة
+          displayCarDetails(foundCar);
+          
+          // تحديث حالة القراءة للإدارة
+          await db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).update({
+            userRead: true
+          });
+          
+          showAlert('تم العثور على سيارتك بنجاح', 'success');
+        } else {
+          showAlert('لم يتم العثور على سيارة بهذه البيانات. تأكد من رقم السيارة وكلمة السر', 'error');
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+        showAlert('حدث خطأ في البحث، حاول مرة أخرى', 'error');
+      } finally {
+        searchBtn.innerHTML = originalText;
+        searchBtn.disabled = false;
       }
     }
-
-    function filterCars() { renderCars(); }
-
-    function backToWorkshops() {
-      document.getElementById("carsView").classList.add("hidden");
-      document.getElementById("workshopView").classList.remove("hidden");
-      document.getElementById("carSearch").value = "";
-    }
-
-    function openCarModal(key, number, password) {
-      currentCarKey = key;
-      currentCarPassword = password;
-      document.getElementById("modalCarNumber").innerText = "سيارة رقم: " + number;
-      document.getElementById("detailsModal").classList.remove("hidden");
-      document.getElementById("passwordSection").classList.remove("hidden");
-      document.getElementById("dataSection").classList.add("hidden");
-      document.getElementById("cancelBtn").classList.remove("hidden");
-      document.getElementById("carPassInput").value = "";
-    }
-
-    function verifyCarPassword() {
-      const input = document.getElementById("carPassInput").value.trim();
-      const car = allWorkshops[currentWorkshopId]?.cars[currentCarKey];
-
-      if (!car) {
-        showAlert('السيارة غير موجودة', 'error');
-        return;
-      }
-
-      if (input === car.passwordCar) {
-        document.getElementById("passwordSection").classList.add("hidden");
-        document.getElementById("cancelBtn").classList.add("hidden");
-        document.getElementById("dataSection").classList.remove("hidden");
-        
-        document.getElementById("resModel").innerText = car.model || 'غير محدد';
-        document.getElementById("resDate").innerText = car.date || 'غير محدد';
-        
-        const statusEl = document.getElementById("resStatus");
-        statusEl.innerText = car.status;
-        statusEl.className = "px-4 py-1 rounded-full text-white font-bold text-sm " + 
-          (car.status === "جاهزة" ? "bg-green-500" : car.status === "قيد الصيانة" ? "bg-blue-500" : "bg-yellow-500");
-        
-        // عرض الصور
-        const images = car.images || { waiting: "", maintenance: "", ready: "" };
-        
-        document.getElementById("waitingImageContainer").classList.add("hidden");
-        document.getElementById("maintenanceImageContainer").classList.add("hidden");
-        document.getElementById("readyImageContainer").classList.add("hidden");
-        
-        if (images.waiting) {
-          document.getElementById("waitingImage").src = images.waiting;
-          document.getElementById("waitingImageContainer").classList.remove("hidden");
-        }
-        if (images.maintenance) {
-          document.getElementById("maintenanceImage").src = images.maintenance;
-          document.getElementById("maintenanceImageContainer").classList.remove("hidden");
-        }
-        if (images.ready) {
-          document.getElementById("readyImage").src = images.ready;
-          document.getElementById("readyImageContainer").classList.remove("hidden");
-        }
-
-        // تحديث حالة القراءة للإدارة
-        db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).update({
-          userRead: true
-        });
-        
-        showAlert('تم التحقق بنجاح', 'success');
+    
+    function displayCarDetails(car) {
+      document.getElementById("searchView").classList.add("hidden");
+      document.getElementById("carDetailsView").classList.remove("hidden");
+      
+      document.getElementById("detailsCarNumber").innerText = car.number || 'غير محدد';
+      document.getElementById("detailsModel").innerText = car.model || 'غير محدد';
+      document.getElementById("detailsDate").innerText = car.date || 'غير محدد';
+      
+      const statusEl = document.getElementById("detailsStatus");
+      const status = car.status || 'قيد الانتظار';
+      statusEl.innerText = status;
+      
+      // تحديد لون الحالة
+      if (status === "جاهزة" || status === "جاهزة للاستلام") {
+        statusEl.className = "status-badge bg-green-500 text-white";
+      } else if (status === "قيد الصيانة") {
+        statusEl.className = "status-badge bg-blue-500 text-white";
       } else {
-        showAlert("كلمة السر غير صحيحة", 'error');
+        statusEl.className = "status-badge bg-yellow-500 text-white";
+      }
+      
+      // عرض الصور
+      const images = car.images || { waiting: "", maintenance: "", ready: "" };
+      
+      document.getElementById("waitingImageContainer").classList.add("hidden");
+      document.getElementById("maintenanceImageContainer").classList.add("hidden");
+      document.getElementById("readyImageContainer").classList.add("hidden");
+      
+      if (images.waiting) {
+        document.getElementById("waitingImage").src = images.waiting;
+        document.getElementById("waitingImageContainer").classList.remove("hidden");
+      }
+      if (images.maintenance) {
+        document.getElementById("maintenanceImage").src = images.maintenance;
+        document.getElementById("maintenanceImageContainer").classList.remove("hidden");
+      }
+      if (images.ready) {
+        document.getElementById("readyImage").src = images.ready;
+        document.getElementById("readyImageContainer").classList.remove("hidden");
       }
     }
-
+    
+    function backToSearch() {
+      document.getElementById("carDetailsView").classList.add("hidden");
+      document.getElementById("searchView").classList.remove("hidden");
+      document.getElementById("searchCarNumber").value = "";
+      document.getElementById("searchCarPassword").value = "";
+      
+      // إغلاق الدردشة إذا كانت مفتوحة
+      if (chatListener) {
+        if (currentWorkshopId && currentCarKey) {
+          db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).off();
+        }
+        chatListener = null;
+      }
+      
+      currentWorkshopId = null;
+      currentCarKey = null;
+      currentCarData = null;
+    }
+    
     // دوال الدردشة
     function openChat() {
-      document.getElementById("detailsModal").classList.add("hidden");
+      if (!currentWorkshopId || !currentCarKey) {
+        showAlert('لا توجد سيارة محددة', 'error');
+        return;
+      }
+      document.getElementById("carDetailsView").classList.add("hidden");
       document.getElementById("chatModal").classList.remove("hidden");
       loadUserChatMessages();
     }
-
+    
     function closeChat() {
       document.getElementById("chatModal").classList.add("hidden");
-      document.getElementById("detailsModal").classList.remove("hidden");
-      if (chatListener) {
+      document.getElementById("carDetailsView").classList.remove("hidden");
+      if (chatListener && currentWorkshopId && currentCarKey) {
         db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).off();
+        chatListener = null;
       }
     }
-
+    
     function loadUserChatMessages() {
       const messagesDiv = document.getElementById("chatMessages");
+      
+      if (chatListener) {
+        if (currentWorkshopId && currentCarKey) {
+          db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).off();
+        }
+      }
       
       chatListener = db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).on("value", snap => {
         const chat = snap.val() || {};
@@ -428,14 +508,14 @@
             div.innerHTML = `
               <div class="${msg.from === 'user' ? 'message-bubble-sent' : 'message-bubble-received'} p-2">
                 <img src="${msg.image}" class="chat-image max-w-[200px] rounded-lg mb-1" onclick="openFullImage('${msg.image}')">
-                ${msg.text ? `<p class="mt-1 ${msg.from === 'user' ? 'text-white' : 'text-gray-700'}">${msg.text}</p>` : ''}
+                ${msg.text ? `<p class="mt-1 ${msg.from === 'user' ? 'text-white' : 'text-gray-700'}">${escapeHtml(msg.text)}</p>` : ''}
                 <p class="text-xs ${msg.from === 'user' ? 'text-blue-100' : 'text-gray-500'} mt-1">${new Date(msg.timestamp).toLocaleTimeString('ar-EG')}</p>
               </div>
             `;
           } else {
             div.innerHTML = `
               <div class="${msg.from === 'user' ? 'message-bubble-sent' : 'message-bubble-received'} p-3">
-                <p class="${msg.from === 'user' ? 'text-white' : 'text-gray-700'}">${msg.text}</p>
+                <p class="${msg.from === 'user' ? 'text-white' : 'text-gray-700'}">${escapeHtml(msg.text)}</p>
                 <p class="text-xs ${msg.from === 'user' ? 'text-blue-100' : 'text-gray-500'} mt-1">${new Date(msg.timestamp).toLocaleTimeString('ar-EG')}</p>
               </div>
             `;
@@ -447,7 +527,14 @@
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
     }
-
+    
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
     function sendUserMessage() {
       const text = document.getElementById("chatMessageInput").value.trim();
       if (!text || !currentCarKey) return;
@@ -470,11 +557,11 @@
         })
         .catch(() => showAlert("فشل في إرسال الرسالة", 'error'));
     }
-
+    
     function uploadChatImage() {
       document.getElementById("chatImageInput").click();
     }
-
+    
     function handleUserChatImageUpload(event) {
       const file = event.target.files[0];
       if (!file || !currentCarKey) return;
@@ -505,31 +592,20 @@
       };
       
       reader.readAsDataURL(file);
+      event.target.value = ''; // إعادة تعيين input
     }
-
+    
     // دوال عرض الصورة الكاملة
     function openFullImage(src) {
       document.getElementById("fullImage").src = src;
       document.getElementById("fullImageModal").classList.remove("hidden");
     }
-
+    
     function closeFullImage() {
       document.getElementById("fullImageModal").classList.add("hidden");
     }
-
-    function closeModal() {
-      document.getElementById("detailsModal").classList.add("hidden");
-    }
-
-    // دوال مركز الدعم
-    function openSupportModal() {
-      document.getElementById("supportModal").classList.remove("hidden");
-    }
-
-    function closeSupportModal() {
-      document.getElementById("supportModal").classList.add("hidden");
-    }
-
+    
+    // إرسال شكوى الدعم
     function sendUserSupportTicket() {
       const phone = document.getElementById("supportPhone").value.trim();
       const type = document.getElementById("supportType").value;
@@ -540,8 +616,9 @@
         return;
       }
       
-      if (!/^05\d{8}$/.test(phone)) {
-        showAlert('رقم الهاتف غير صحيح', 'error');
+      // التحقق من رقم هاتف ليبي (يبدأ بـ 09 ويتبعه 8 أرقام)
+      if (!/^09\d{8}$/.test(phone)) {
+        showAlert('رقم الهاتف غير صحيح (يجب أن يبدأ بـ 09 ويتبعه 8 أرقام)', 'error');
         return;
       }
       
@@ -551,8 +628,8 @@
         message: message,
         timestamp: Date.now(),
         workshopId: currentWorkshopId || 'unknown',
-        workshopName: currentWorkshopId ? allWorkshops[currentWorkshopId]?.name : 'غير معروف',
-        carNumber: currentCarKey ? allWorkshops[currentWorkshopId]?.cars[currentCarKey]?.number : 'غير محدد',
+        workshopName: currentWorkshopId ? 'تم البحث عن سيارة' : 'غير محدد',
+        carNumber: currentCarData?.number || 'غير محدد',
         status: 'جديد'
       };
       
@@ -561,12 +638,25 @@
           showAlert('تم إرسال الشكوى إلى مركز الدعم بنجاح', 'success');
           document.getElementById("supportPhone").value = "";
           document.getElementById("supportMessage").value = "";
-          closeSupportModal();
+          closeSupportModalAndShowButton();
         })
         .catch(() => showAlert('فشل في إرسال الشكوى', 'error'));
     }
-
-    window.onload = loadWorkshops;
+    
+    // تفعيل البحث عند الضغط على Enter
+    document.addEventListener('DOMContentLoaded', () => {
+      const carNumberInput = document.getElementById("searchCarNumber");
+      const carPasswordInput = document.getElementById("searchCarPassword");
+      
+      const handleEnter = (e) => {
+        if (e.key === 'Enter') {
+          searchCar();
+        }
+      };
+      
+      carNumberInput.addEventListener('keypress', handleEnter);
+      carPasswordInput.addEventListener('keypress', handleEnter);
+    });
   </script>
 </body>
 </html>
