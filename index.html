@@ -2,8 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ورشة+ | تتبع حالة سيارتك</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ورشة+</title>
+  <!-- Firebase & Core Libraries -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <script>
@@ -22,10 +23,30 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    /* Keyframes for smooth loading & splash animations */
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(10px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    @keyframes slideIn { 
+      from { transform: translateX(-20px); opacity: 0; } 
+      to { transform: translateX(0); opacity: 1; } 
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+      70% { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+    }
     .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-    @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     .animate-slideIn { animation: slideIn 0.3s ease-out forwards; }
+    .loading-shimmer {
+      background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s linear infinite;
+    }
+    @keyframes shimmer {
+      to { background-position-x: -200%; }
+    }
     .message-bubble-sent {
       background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: white;
@@ -44,9 +65,7 @@
       cursor: pointer;
       transition: transform 0.2s;
     }
-    .chat-image:hover {
-      transform: scale(1.05);
-    }
+    .chat-image:hover { transform: scale(1.05); }
     .support-badge {
       position: fixed;
       top: 20px;
@@ -54,16 +73,7 @@
       z-index: 1000;
       transition: all 0.3s ease;
     }
-    .support-badge.hidden {
-      display: none;
-    }
-    .back-support-btn {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 1000;
-      animation: slideIn 0.3s ease-out forwards;
-    }
+    .support-badge.hidden { display: none; }
     .status-badge {
       display: inline-block;
       padding: 0.5rem 1.5rem;
@@ -71,20 +81,142 @@
       font-weight: bold;
       font-size: 1rem;
     }
+    
+    /* ========== تحسين شاشة التحميل - توسيط كامل + أبعاد متناسقة ========== */
+    .splash-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s ease, visibility 0.6s;
+    }
+    
+    /* حاوية مركزية مرنة تمامًا */
+    .splash-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      padding: 1.5rem;
+      margin: 0 auto;
+      transform: translateY(-2%);
+    }
+    
+    /* صورة الغلاف - أبعاد متوازنة وجذابة */
+    .splash-image {
+      width: 85%;
+      max-width: 300px;
+      height: auto;
+      border-radius: 48px;
+      box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3);
+      margin-bottom: 2rem;
+      transition: transform 0.3s ease;
+      display: block;
+    }
+    
+    /* زر التحميل المتحرك (سبينر) */
+    .splash-spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid #e2e8f0;
+      border-top: 5px solid #3b82f6;
+      border-right: 5px solid #60a5fa;
+      border-radius: 50%;
+      animation: spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      margin: 1rem 0 0.75rem 0;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* نص التحميل المخصص */
+    .splash-loading-text {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1e3a8a;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 0.6rem 1.5rem;
+      border-radius: 60px;
+      margin-top: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      font-family: 'Tajawal', system-ui, sans-serif;
+    }
+    
+    .splash-loading-text i {
+      font-size: 1.4rem;
+      animation: subtlePulse 1.4s infinite;
+    }
+    
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 0.7; transform: scale(1);}
+      50% { opacity: 1; transform: scale(1.05);}
+    }
+    
+    /* تحسين للشاشات الصغيرة جدًا */
+    @media (max-width: 480px) {
+      .splash-image {
+        max-width: 240px;
+        width: 75%;
+      }
+      .splash-spinner {
+        width: 52px;
+        height: 52px;
+      }
+      .splash-loading-text {
+        font-size: 1rem;
+        padding: 0.5rem 1.2rem;
+      }
+    }
+    
+    /* skeleton loaders */
+    .skeleton-text {
+      height: 1.2rem;
+      background: #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+    }
+    .skeleton-image {
+      height: 120px;
+      background: #e2e8f0;
+      border-radius: 16px;
+    }
   </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-gray-100 min-h-screen p-4 text-right font-sans">
+<body class="bg-gradient-to-br from-blue-50 to-gray-100 min-h-screen p-4 text-right font-sans relative">
 
-  <!-- زر مركز الدعم -->
+  <!-- شاشة التحميل الخارجية - توسيط كامل + أبعاد مثالية -->
+  <div id="splashScreen" class="splash-overlay">
+    <div class="splash-center">
+      <img class="splash-image" src="https://up6.cc/2026/04/177565661597141.png" alt="ورشة+ الغلاف">
+      <div class="splash-spinner"></div>
+      <div class="splash-loading-text">
+        <i class="ph ph-car-simple"></i>
+        جاري تحميل حالة سيارتك ...
+      </div>
+    </div>
+  </div>
+
+  <!-- زر مركز الدعم (بدون زر عودة زائد) -->
   <div class="support-badge" id="supportButton">
     <button onclick="openSupportModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition transform hover:scale-105">
       <i class="ph ph-headset text-xl"></i>
       <span class="font-bold">مركز الدعم</span>
     </button>
-  </div>
-
-  <!-- زر العودة للصفحة الرئيسية (يظهر عند فتح الدعم) -->
-  
   </div>
 
   <div class="max-w-2xl mx-auto">
@@ -123,7 +255,6 @@
           بحث عن السيارة
         </button>
       </div>
-      
       <div class="mt-6 text-center text-sm text-gray-400 border-t pt-4">
         <i class="ph ph-shield-check"></i>
         بياناتك آمنة ومشفرة
@@ -145,138 +276,43 @@
         </div>
       </div>
       
-      <div class="p-6 space-y-5">
-        <!-- معلومات السيارة الأساسية -->
-        <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-          <div class="flex justify-between items-center border-b pb-2">
-            <span class="text-gray-500">الموديل</span>
-            <span id="detailsModel" class="font-bold text-gray-800">---</span>
-          </div>
-          <div class="flex justify-between items-center border-b pb-2">
-            <span class="text-gray-500">تاريخ الاستلام</span>
-            <span id="detailsDate" class="font-bold text-gray-800">---</span>
-          </div>
-          <div class="flex justify-between items-center pt-2">
-            <span class="text-gray-500">الحالة</span>
-            <span id="detailsStatus" class="status-badge"></span>
-          </div>
-        </div>
-
-        <!-- صور الحالات -->
-        <div>
-          <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
-            <i class="ph ph-image"></i>
-            صور حالة السيارة
-          </h3>
-          <div id="imagesSection" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div id="waitingImageContainer" class="border rounded-xl p-3 hidden bg-yellow-50">
-              <h4 class="font-bold text-yellow-600 mb-2 text-center flex items-center justify-center gap-1">
-                <i class="ph ph-clock"></i> قيد الانتظار
-              </h4>
-              <img id="waitingImage" src="" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="openFullImage(this.src)">
-            </div>
-            <div id="maintenanceImageContainer" class="border rounded-xl p-3 hidden bg-blue-50">
-              <h4 class="font-bold text-blue-600 mb-2 text-center flex items-center justify-center gap-1">
-                <i class="ph ph-wrench"></i> قيد الصيانة
-              </h4>
-              <img id="maintenanceImage" src="" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="openFullImage(this.src)">
-            </div>
-            <div id="readyImageContainer" class="border rounded-xl p-3 hidden bg-green-50">
-              <h4 class="font-bold text-green-600 mb-2 text-center flex items-center justify-center gap-1">
-                <i class="ph ph-check-circle"></i> جاهزة للاستلام
-              </h4>
-              <img id="readyImage" src="" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="openFullImage(this.src)">
-            </div>
-          </div>
-        </div>
-
-        <!-- زر الدردشة مع الإدارة -->
-        <button onclick="openChat()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-md">
-          <i class="ph ph-chat-circle text-xl"></i>
-          دردشة مع الإدارة
-        </button>
+      <div class="p-6 space-y-5" id="carDetailsContent">
+        <!-- سيتم تعبئة المحتوى ديناميكيًا أو عرض سكليتون -->
       </div>
     </div>
   </div>
 
-  <!-- مودال الدردشة -->
+  <!-- باقي المودالات: دردشة، صورة كاملة، دعم -->
   <div id="chatModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60]">
     <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slideIn">
       <div class="p-4 bg-purple-600 text-white flex justify-between items-center">
-        <h3 class="text-xl font-bold flex items-center gap-2">
-          <i class="ph ph-chat-circle text-2xl"></i>
-          الدردشة مع الإدارة
-        </h3>
+        <h3 class="text-xl font-bold flex items-center gap-2"><i class="ph ph-chat-circle text-2xl"></i> الدردشة مع الإدارة</h3>
         <button onclick="closeChat()" class="text-white hover:text-gray-200 text-2xl">✕</button>
       </div>
-      
-      <div id="chatMessages" class="h-96 overflow-y-auto p-4 space-y-3 bg-gray-50">
-        <!-- الرسائل تظهر هنا -->
-      </div>
-      
+      <div id="chatMessages" class="h-96 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
       <div class="p-3 bg-white border-t">
         <div class="flex gap-2">
-          <button onclick="uploadChatImage()" class="bg-gray-200 hover:bg-gray-300 px-3 rounded-lg transition">
-            <i class="ph ph-image text-xl"></i>
-          </button>
+          <button onclick="uploadChatImage()" class="bg-gray-200 hover:bg-gray-300 px-3 rounded-lg transition"><i class="ph ph-image text-xl"></i></button>
           <input type="text" id="chatMessageInput" placeholder="اكتب رسالتك..." class="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
-          <button onclick="sendUserMessage()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 rounded-lg font-bold transition transform hover:scale-105">
-            إرسال
-          </button>
+          <button onclick="sendUserMessage()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 rounded-lg font-bold transition transform hover:scale-105">إرسال</button>
         </div>
       </div>
-      
       <input type="file" id="chatImageInput" accept="image/*" class="hidden" onchange="handleUserChatImageUpload(event)">
     </div>
   </div>
 
-  <!-- مودال عرض الصورة الكاملة -->
   <div id="fullImageModal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[70]">
-    <div class="relative max-w-4xl max-h-[90vh]">
-      <button onclick="closeFullImage()" class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300">✕</button>
-      <img id="fullImage" src="" class="max-w-full max-h-[90vh] object-contain rounded-lg">
-    </div>
+    <div class="relative max-w-4xl max-h-[90vh]"><button onclick="closeFullImage()" class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300">✕</button><img id="fullImage" src="" class="max-w-full max-h-[90vh] object-contain rounded-lg"></div>
   </div>
 
-  <!-- مودال مركز الدعم -->
   <div id="supportModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slideIn">
-      <div class="p-6">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-2xl font-bold text-red-600 flex items-center gap-2">
-            <i class="ph ph-headset"></i>
-            مركز الدعم الفني
-          </h3>
-          <button onclick="closeSupportModalAndShowButton()" class="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
-        </div>
-
-        <div class="bg-red-50 p-4 rounded-xl mb-6">
-          <p class="text-sm text-gray-600">للتواصل السريع: الدعم متاح على مدار الساعة</p>
-        </div>
-
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-2">رقم الهاتف (ليبي)</label>
-            <input type="tel" id="supportPhone" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-red-500 outline-none" placeholder="09xxxxxxxx">
-            <p class="text-xs text-gray-500 mt-1">مثال: 0912345678</p>
-          </div>
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-2">نوع المشكلة</label>
-            <select id="supportType" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-red-500 outline-none">
-              <option value="فنية">مشكلة فنية في النظام</option>
-              <option value="استفسار">استفسار عن ورشة</option>
-              <option value="شكوى">شكوى على ورشة</option>
-              <option value="اقتراح">اقتراح</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-2">تفاصيل الشكوى</label>
-            <textarea id="supportMessage" rows="5" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-red-500 outline-none" placeholder="اكتب مشكلتك بالتفصيل..."></textarea>
-          </div>
-          <button onclick="sendUserSupportTicket()" class="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold text-lg transition transform hover:scale-105">
-            إرسال الشكوى إلى الدعم الفني
-          </button>
-        </div>
+      <div class="p-6"><div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold text-red-600 flex items-center gap-2"><i class="ph ph-headset"></i> مركز الدعم الفني</h3><button onclick="closeSupportModalAndShowButton()" class="text-gray-500 hover:text-gray-700 text-2xl">✕</button></div>
+        <div class="bg-red-50 p-4 rounded-xl mb-6"><p class="text-sm text-gray-600">للتواصل السريع: الدعم متاح على مدار الساعة</p></div>
+        <div class="space-y-4"><div><label class="block text-sm font-bold text-gray-700 mb-2">رقم الهاتف (ليبي)</label><input type="tel" id="supportPhone" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-red-500 outline-none" placeholder="09xxxxxxxx"><p class="text-xs text-gray-500 mt-1">مثال: 0912345678</p></div>
+        <div><label class="block text-sm font-bold text-gray-700 mb-2">نوع المشكلة</label><select id="supportType" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-red-500 outline-none"><option value="فنية">مشكلة فنية في النظام</option><option value="استفسار">استفسار عن ورشة</option><option value="شكوى">شكوى على ورشة</option><option value="اقتراح">اقتراح</option></select></div>
+        <div><label class="block text-sm font-bold text-gray-700 mb-2">تفاصيل الشكوى</label><textarea id="supportMessage" rows="5" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-red-500 outline-none" placeholder="اكتب مشكلتك بالتفصيل..."></textarea></div>
+        <button onclick="sendUserSupportTicket()" class="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold text-lg transition transform hover:scale-105">إرسال الشكوى إلى الدعم الفني</button></div>
       </div>
     </div>
   </div>
@@ -287,160 +323,144 @@
     let currentCarData = null;
     let chatListener = null;
 
-    // دالة لعرض التنبيهات
+    // إزالة شاشة التحميل بعد تحميل المحتوى بالكامل (مع تحسين التوقيت)
+    window.addEventListener('load', () => {
+      const splash = document.getElementById('splashScreen');
+      if (splash) {
+        // إبقاء الشاشة لمدة 1.6 ثانية لضمان ظهور النص والصورة بشكل مريح
+        setTimeout(() => {
+          splash.style.opacity = '0';
+          setTimeout(() => {
+            splash.style.visibility = 'hidden';
+            splash.style.display = 'none';
+          }, 550);
+        }, 1700);
+      }
+    });
+
+    // دالة التنبيهات
     function showAlert(message, type = 'success') {
       const alertDiv = document.createElement('div');
       alertDiv.className = `fixed top-20 right-4 p-4 rounded-xl shadow-2xl z-[100] animate-slideIn flex items-center gap-3 ${
-        type === 'success' ? 'bg-green-500' : 
-        type === 'error' ? 'bg-red-500' : 
-        'bg-yellow-500'
-      } text-white`;
-      
-      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
-      alertDiv.innerHTML = `${icon} ${message}`;
-      
+        type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-yellow-500'} text-white`;
+      alertDiv.innerHTML = `${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'} ${message}`;
       document.body.appendChild(alertDiv);
-      
-      setTimeout(() => {
-        alertDiv.style.opacity = '0';
-        alertDiv.style.transition = 'opacity 0.5s';
-        setTimeout(() => alertDiv.remove(), 500);
-      }, 3000);
+      setTimeout(() => { alertDiv.style.opacity = '0'; alertDiv.style.transition = 'opacity 0.5s'; setTimeout(() => alertDiv.remove(), 500); }, 3000);
     }
 
-    // فتح مودال الدعم مع إخفاء الزر الأصلي
-    function openSupportModal() {
-      document.getElementById("supportModal").classList.remove("hidden");
-      document.getElementById("supportButton").classList.add("hidden");
-      
-      // إنشاء زر العودة إذا لم يكن موجوداً
-      let backBtn = document.getElementById("backToMainBtn");
-      if (backBtn) {
-        backBtn.classList.remove("hidden");
-        backBtn.style.position = "fixed";
-        backBtn.style.top = "20px";
-        backBtn.style.left = "20px";
-        backBtn.style.zIndex = "1000";
+    // حالة تحميل زر البحث
+    function showSearchLoading(show) {
+      const btn = document.querySelector('#searchView button');
+      if (show) {
+        btn.innerHTML = '<i class="ph ph-spinner ph-spin text-xl"></i> جاري البحث...';
+        btn.disabled = true;
+      } else {
+        btn.innerHTML = '<i class="ph ph-magnifying-glass text-xl"></i> بحث عن السيارة';
+        btn.disabled = false;
       }
     }
-    
-    // إغلاق مودال الدعم وإظهار الزر الأصلي
-    function closeSupportModalAndShowButton() {
-      document.getElementById("supportModal").classList.add("hidden");
-      document.getElementById("supportButton").classList.remove("hidden");
-      document.getElementById("backToMainBtn").classList.add("hidden");
+
+    // عرض skeleton loader داخل تفاصيل السيارة
+    function showCarDetailsSkeleton() {
+      const container = document.getElementById("carDetailsContent");
+      if (!container) return;
+      container.innerHTML = `
+        <div class="bg-gray-50 rounded-xl p-4 space-y-3 animate-pulse">
+          <div class="skeleton-text w-3/4"></div><div class="skeleton-text w-1/2"></div><div class="skeleton-text w-2/3"></div>
+        </div>
+        <div class="mt-4"><div class="skeleton-image w-full"></div><div class="flex gap-2 mt-2"><div class="skeleton-image w-1/3"></div><div class="skeleton-image w-1/3"></div><div class="skeleton-image w-1/3"></div></div></div>
+        <div class="skeleton-text w-full h-12 mt-4 rounded-xl"></div>
+      `;
     }
-    
-    // البحث عن السيارة عبر جميع الورش
+
+    // استعادة تفاصيل السيارة الفعلية بعد التحميل
+    function restoreCarDetailsFromData(car) {
+      const container = document.getElementById("carDetailsContent");
+      if (!container) return;
+      container.innerHTML = `
+        <div class="bg-gray-50 rounded-xl p-4 space-y-3">
+          <div class="flex justify-between items-center border-b pb-2"><span class="text-gray-500">الموديل</span><span id="detailsModel" class="font-bold text-gray-800">${car.model || 'غير محدد'}</span></div>
+          <div class="flex justify-between items-center border-b pb-2"><span class="text-gray-500">تاريخ الاستلام</span><span id="detailsDate" class="font-bold text-gray-800">${car.date || 'غير محدد'}</span></div>
+          <div class="flex justify-between items-center pt-2"><span class="text-gray-500">الحالة</span><span id="detailsStatus" class="status-badge"></span></div>
+        </div>
+        <div><h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="ph ph-image"></i> صور حالة السيارة</h3>
+        <div id="imagesSection" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div id="waitingImageContainer" class="border rounded-xl p-3 hidden bg-yellow-50"><h4 class="font-bold text-yellow-600 mb-2 text-center flex items-center justify-center gap-1"><i class="ph ph-clock"></i> قيد الانتظار</h4><img id="waitingImage" src="" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="openFullImage(this.src)"></div>
+          <div id="maintenanceImageContainer" class="border rounded-xl p-3 hidden bg-blue-50"><h4 class="font-bold text-blue-600 mb-2 text-center flex items-center justify-center gap-1"><i class="ph ph-wrench"></i> قيد الصيانة</h4><img id="maintenanceImage" src="" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="openFullImage(this.src)"></div>
+          <div id="readyImageContainer" class="border rounded-xl p-3 hidden bg-green-50"><h4 class="font-bold text-green-600 mb-2 text-center flex items-center justify-center gap-1"><i class="ph ph-check-circle"></i> جاهزة للاستلام</h4><img id="readyImage" src="" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="openFullImage(this.src)"></div>
+        </div></div>
+        <button onclick="openChat()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-md"><i class="ph ph-chat-circle text-xl"></i> دردشة مع الإدارة</button>
+      `;
+      // تعيين الحالة
+      const statusEl = document.getElementById("detailsStatus");
+      const status = car.status || 'قيد الانتظار';
+      statusEl.innerText = status;
+      if (status === "جاهزة" || status === "جاهزة للاستلام") statusEl.className = "status-badge bg-green-500 text-white";
+      else if (status === "قيد الصيانة") statusEl.className = "status-badge bg-blue-500 text-white";
+      else statusEl.className = "status-badge bg-yellow-500 text-white";
+      
+      const images = car.images || { waiting: "", maintenance: "", ready: "" };
+      const waitingContainer = document.getElementById("waitingImageContainer");
+      const maintenanceContainer = document.getElementById("maintenanceImageContainer");
+      const readyContainer = document.getElementById("readyImageContainer");
+      if(waitingContainer) waitingContainer.classList.add("hidden");
+      if(maintenanceContainer) maintenanceContainer.classList.add("hidden");
+      if(readyContainer) readyContainer.classList.add("hidden");
+      
+      if (images.waiting && document.getElementById("waitingImage")) {
+        document.getElementById("waitingImage").src = images.waiting;
+        waitingContainer?.classList.remove("hidden");
+      }
+      if (images.maintenance && document.getElementById("maintenanceImage")) {
+        document.getElementById("maintenanceImage").src = images.maintenance;
+        maintenanceContainer?.classList.remove("hidden");
+      }
+      if (images.ready && document.getElementById("readyImage")) {
+        document.getElementById("readyImage").src = images.ready;
+        readyContainer?.classList.remove("hidden");
+      }
+    }
+
+    // البحث الرئيسي
     async function searchCar() {
       const carNumber = document.getElementById("searchCarNumber").value.trim();
       const carPassword = document.getElementById("searchCarPassword").value.trim();
+      if (!carNumber) { showAlert('الرجاء إدخال رقم السيارة', 'error'); return; }
+      if (!carPassword) { showAlert('الرجاء إدخال كلمة السر', 'error'); return; }
       
-      if (!carNumber) {
-        showAlert('الرجاء إدخال رقم السيارة', 'error');
-        return;
-      }
-      
-      if (!carPassword) {
-        showAlert('الرجاء إدخال كلمة السر', 'error');
-        return;
-      }
-      
-      // إظهار مؤشر تحميل
-      const searchBtn = document.querySelector('#searchView button');
-      const originalText = searchBtn.innerHTML;
-      searchBtn.innerHTML = '<i class="ph ph-spinner ph-spin text-xl"></i> جاري البحث...';
-      searchBtn.disabled = true;
-      
+      showSearchLoading(true);
       try {
-        // جلب جميع الورش
         const workshopsSnap = await db.ref("التصنيفات").once("value");
         const workshops = workshopsSnap.val() || {};
-        
-        let foundWorkshopId = null;
-        let foundCarKey = null;
-        let foundCar = null;
-        
-        // البحث في كل ورشة عن السيارة المطابقة للرقم وكلمة السر
+        let foundWorkshopId = null, foundCarKey = null, foundCar = null;
         for (const workshopId in workshops) {
           const cars = workshops[workshopId].cars || {};
           for (const carKey in cars) {
             const car = cars[carKey];
             if (car.number === carNumber && car.passwordCar === carPassword) {
-              foundWorkshopId = workshopId;
-              foundCarKey = carKey;
-              foundCar = car;
-              break;
+              foundWorkshopId = workshopId; foundCarKey = carKey; foundCar = car; break;
             }
-          }
-          if (foundWorkshopId) break;
+          } if (foundWorkshopId) break;
         }
-        
         if (foundWorkshopId && foundCar) {
-          currentWorkshopId = foundWorkshopId;
-          currentCarKey = foundCarKey;
-          currentCarData = foundCar;
-          
-          // عرض تفاصيل السيارة
-          displayCarDetails(foundCar);
-          
-          // تحديث حالة القراءة للإدارة
-          await db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).update({
-            userRead: true
-          });
-          
-          showAlert('تم العثور على سيارتك بنجاح', 'success');
+          currentWorkshopId = foundWorkshopId; currentCarKey = foundCarKey; currentCarData = foundCar;
+          document.getElementById("searchView").classList.add("hidden");
+          document.getElementById("carDetailsView").classList.remove("hidden");
+          document.getElementById("detailsCarNumber").innerText = foundCar.number || 'غير محدد';
+          showCarDetailsSkeleton();
+          setTimeout(() => {
+            restoreCarDetailsFromData(foundCar);
+            db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).update({ userRead: true }).catch(e=>console.warn);
+            showAlert('تم العثور على سيارتك بنجاح', 'success');
+          }, 280);
         } else {
           showAlert('لم يتم العثور على سيارة بهذه البيانات. تأكد من رقم السيارة وكلمة السر', 'error');
         }
       } catch (error) {
-        console.error("Search error:", error);
+        console.error(error);
         showAlert('حدث خطأ في البحث، حاول مرة أخرى', 'error');
       } finally {
-        searchBtn.innerHTML = originalText;
-        searchBtn.disabled = false;
-      }
-    }
-    
-    function displayCarDetails(car) {
-      document.getElementById("searchView").classList.add("hidden");
-      document.getElementById("carDetailsView").classList.remove("hidden");
-      
-      document.getElementById("detailsCarNumber").innerText = car.number || 'غير محدد';
-      document.getElementById("detailsModel").innerText = car.model || 'غير محدد';
-      document.getElementById("detailsDate").innerText = car.date || 'غير محدد';
-      
-      const statusEl = document.getElementById("detailsStatus");
-      const status = car.status || 'قيد الانتظار';
-      statusEl.innerText = status;
-      
-      // تحديد لون الحالة
-      if (status === "جاهزة" || status === "جاهزة للاستلام") {
-        statusEl.className = "status-badge bg-green-500 text-white";
-      } else if (status === "قيد الصيانة") {
-        statusEl.className = "status-badge bg-blue-500 text-white";
-      } else {
-        statusEl.className = "status-badge bg-yellow-500 text-white";
-      }
-      
-      // عرض الصور
-      const images = car.images || { waiting: "", maintenance: "", ready: "" };
-      
-      document.getElementById("waitingImageContainer").classList.add("hidden");
-      document.getElementById("maintenanceImageContainer").classList.add("hidden");
-      document.getElementById("readyImageContainer").classList.add("hidden");
-      
-      if (images.waiting) {
-        document.getElementById("waitingImage").src = images.waiting;
-        document.getElementById("waitingImageContainer").classList.remove("hidden");
-      }
-      if (images.maintenance) {
-        document.getElementById("maintenanceImage").src = images.maintenance;
-        document.getElementById("maintenanceImageContainer").classList.remove("hidden");
-      }
-      if (images.ready) {
-        document.getElementById("readyImage").src = images.ready;
-        document.getElementById("readyImageContainer").classList.remove("hidden");
+        showSearchLoading(false);
       }
     }
     
@@ -449,213 +469,46 @@
       document.getElementById("searchView").classList.remove("hidden");
       document.getElementById("searchCarNumber").value = "";
       document.getElementById("searchCarPassword").value = "";
-      
-      // إغلاق الدردشة إذا كانت مفتوحة
-      if (chatListener) {
-        if (currentWorkshopId && currentCarKey) {
-          db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).off();
-        }
-        chatListener = null;
-      }
-      
-      currentWorkshopId = null;
-      currentCarKey = null;
-      currentCarData = null;
+      if (chatListener && currentWorkshopId && currentCarKey) db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).off();
+      chatListener = null;
+      currentWorkshopId = null; currentCarKey = null; currentCarData = null;
     }
     
     // دوال الدردشة
-    function openChat() {
-      if (!currentWorkshopId || !currentCarKey) {
-        showAlert('لا توجد سيارة محددة', 'error');
-        return;
-      }
-      document.getElementById("carDetailsView").classList.add("hidden");
-      document.getElementById("chatModal").classList.remove("hidden");
-      loadUserChatMessages();
-    }
-    
-    function closeChat() {
-      document.getElementById("chatModal").classList.add("hidden");
-      document.getElementById("carDetailsView").classList.remove("hidden");
-      if (chatListener && currentWorkshopId && currentCarKey) {
-        db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).off();
-        chatListener = null;
-      }
-    }
-    
+    function openChat() { if (!currentWorkshopId || !currentCarKey) { showAlert('لا توجد سيارة محددة', 'error'); return; } document.getElementById("carDetailsView").classList.add("hidden"); document.getElementById("chatModal").classList.remove("hidden"); loadUserChatMessages(); }
+    function closeChat() { document.getElementById("chatModal").classList.add("hidden"); document.getElementById("carDetailsView").classList.remove("hidden"); if (chatListener && currentWorkshopId && currentCarKey) db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).off(); chatListener = null; }
     function loadUserChatMessages() {
       const messagesDiv = document.getElementById("chatMessages");
-      
-      if (chatListener) {
-        if (currentWorkshopId && currentCarKey) {
-          db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).off();
-        }
-      }
-      
+      if (chatListener && currentWorkshopId && currentCarKey) db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).off();
       chatListener = db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).on("value", snap => {
-        const chat = snap.val() || {};
-        messagesDiv.innerHTML = "";
-        
-        const messages = Object.entries(chat)
-          .filter(([key, value]) => key !== 'adminRead' && key !== 'userRead' && key !== 'lastMessage' && value && value.timestamp)
-          .sort((a, b) => a[1].timestamp - b[1].timestamp);
-        
+        const chat = snap.val() || {}; messagesDiv.innerHTML = "";
+        const messages = Object.entries(chat).filter(([key, value]) => key !== 'adminRead' && key !== 'userRead' && key !== 'lastMessage' && value && value.timestamp).sort((a,b) => a[1].timestamp - b[1].timestamp);
         for (let [msgKey, msg] of messages) {
-          const div = document.createElement("div");
-          div.className = `flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'} mb-3`;
-          
-          if (msg.image) {
-            div.innerHTML = `
-              <div class="${msg.from === 'user' ? 'message-bubble-sent' : 'message-bubble-received'} p-2">
-                <img src="${msg.image}" class="chat-image max-w-[200px] rounded-lg mb-1" onclick="openFullImage('${msg.image}')">
-                ${msg.text ? `<p class="mt-1 ${msg.from === 'user' ? 'text-white' : 'text-gray-700'}">${escapeHtml(msg.text)}</p>` : ''}
-                <p class="text-xs ${msg.from === 'user' ? 'text-blue-100' : 'text-gray-500'} mt-1">${new Date(msg.timestamp).toLocaleTimeString('ar-EG')}</p>
-              </div>
-            `;
-          } else {
-            div.innerHTML = `
-              <div class="${msg.from === 'user' ? 'message-bubble-sent' : 'message-bubble-received'} p-3">
-                <p class="${msg.from === 'user' ? 'text-white' : 'text-gray-700'}">${escapeHtml(msg.text)}</p>
-                <p class="text-xs ${msg.from === 'user' ? 'text-blue-100' : 'text-gray-500'} mt-1">${new Date(msg.timestamp).toLocaleTimeString('ar-EG')}</p>
-              </div>
-            `;
-          }
-          
+          const div = document.createElement("div"); div.className = `flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'} mb-3`;
+          if (msg.image) { div.innerHTML = `<div class="${msg.from === 'user' ? 'message-bubble-sent' : 'message-bubble-received'} p-2"><img src="${msg.image}" class="chat-image max-w-[200px] rounded-lg mb-1" onclick="openFullImage('${msg.image}')">${msg.text ? `<p class="mt-1 ${msg.from === 'user' ? 'text-white' : 'text-gray-700'}">${escapeHtml(msg.text)}</p>` : ''}<p class="text-xs ${msg.from === 'user' ? 'text-blue-100' : 'text-gray-500'} mt-1">${new Date(msg.timestamp).toLocaleTimeString('ar-EG')}</p></div>`; }
+          else { div.innerHTML = `<div class="${msg.from === 'user' ? 'message-bubble-sent' : 'message-bubble-received'} p-3"><p class="${msg.from === 'user' ? 'text-white' : 'text-gray-700'}">${escapeHtml(msg.text)}</p><p class="text-xs ${msg.from === 'user' ? 'text-blue-100' : 'text-gray-500'} mt-1">${new Date(msg.timestamp).toLocaleTimeString('ar-EG')}</p></div>`; }
           messagesDiv.appendChild(div);
-        }
-        
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        } messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
     }
+    function escapeHtml(text) { if(!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+    function sendUserMessage() { const text = document.getElementById("chatMessageInput").value.trim(); if(!text || !currentCarKey) return; const messageId = Date.now().toString(); const message = { text, from: 'user', timestamp: Date.now() }; db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat/${messageId}`).set(message).then(()=>{ db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).update({ lastMessage: message, adminRead: false, userRead: true }); document.getElementById("chatMessageInput").value = ""; }).catch(()=>showAlert("فشل في إرسال الرسالة", 'error')); }
+    function uploadChatImage() { document.getElementById("chatImageInput").click(); }
+    function handleUserChatImageUpload(event) { const file = event.target.files[0]; if(!file || !currentCarKey) return; if(file.size > 5*1024*1024) { showAlert('حجم الصورة يجب أن يكون أقل من 5 ميجابايت', 'error'); return; } const reader = new FileReader(); reader.onload = function(e) { const messageId = Date.now().toString(); const message = { image: e.target.result, from: 'user', timestamp: Date.now() }; db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat/${messageId}`).set(message).then(()=>{ db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).update({ lastMessage: message, adminRead: false, userRead: true }); }).catch(()=>showAlert("فشل في إرسال الصورة", 'error')); }; reader.readAsDataURL(file); event.target.value = ''; }
+    function openFullImage(src) { document.getElementById("fullImage").src = src; document.getElementById("fullImageModal").classList.remove("hidden"); }
+    function closeFullImage() { document.getElementById("fullImageModal").classList.add("hidden"); }
     
-    function escapeHtml(text) {
-      if (!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    // دعم بدون أي أزرار إضافية
+    function openSupportModal() { document.getElementById("supportModal").classList.remove("hidden"); document.getElementById("supportButton").classList.add("hidden"); }
+    function closeSupportModalAndShowButton() { document.getElementById("supportModal").classList.add("hidden"); document.getElementById("supportButton").classList.remove("hidden"); }
+    function sendUserSupportTicket() { const phone = document.getElementById("supportPhone").value.trim(); const type = document.getElementById("supportType").value; const message = document.getElementById("supportMessage").value.trim(); if (!phone || !message) { showAlert('يرجى إدخال رقم الهاتف والرسالة', 'error'); return; } if (!/^09\d{8}$/.test(phone)) { showAlert('رقم الهاتف غير صحيح (يجب أن يبدأ بـ 09 ويتبعه 8 أرقام)', 'error'); return; } const ticket = { phone, type, message, timestamp: Date.now(), workshopId: currentWorkshopId || 'unknown', workshopName: currentWorkshopId ? 'تم البحث عن سيارة' : 'غير محدد', carNumber: currentCarData?.number || 'غير محدد', status: 'جديد' }; db.ref("supportTickets").push(ticket).then(()=>{ showAlert('تم إرسال الشكوى إلى مركز الدعم بنجاح', 'success'); document.getElementById("supportPhone").value = ""; document.getElementById("supportMessage").value = ""; closeSupportModalAndShowButton(); }).catch(()=>showAlert('فشل في إرسال الشكوى', 'error')); }
     
-    function sendUserMessage() {
-      const text = document.getElementById("chatMessageInput").value.trim();
-      if (!text || !currentCarKey) return;
-      
-      const messageId = Date.now().toString();
-      const message = {
-        text: text,
-        from: 'user',
-        timestamp: Date.now()
-      };
-      
-      db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat/${messageId}`).set(message)
-        .then(() => {
-          db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).update({
-            lastMessage: message,
-            adminRead: false,
-            userRead: true
-          });
-          document.getElementById("chatMessageInput").value = "";
-        })
-        .catch(() => showAlert("فشل في إرسال الرسالة", 'error'));
-    }
-    
-    function uploadChatImage() {
-      document.getElementById("chatImageInput").click();
-    }
-    
-    function handleUserChatImageUpload(event) {
-      const file = event.target.files[0];
-      if (!file || !currentCarKey) return;
-      
-      if (file.size > 5 * 1024 * 1024) {
-        showAlert('حجم الصورة يجب أن يكون أقل من 5 ميجابايت', 'error');
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const messageId = Date.now().toString();
-        const message = {
-          image: e.target.result,
-          from: 'user',
-          timestamp: Date.now()
-        };
-        
-        db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat/${messageId}`).set(message)
-          .then(() => {
-            db.ref(`التصنيفات/${currentWorkshopId}/cars/${currentCarKey}/chat`).update({
-              lastMessage: message,
-              adminRead: false,
-              userRead: true
-            });
-          })
-          .catch(() => showAlert("فشل في إرسال الصورة", 'error'));
-      };
-      
-      reader.readAsDataURL(file);
-      event.target.value = ''; // إعادة تعيين input
-    }
-    
-    // دوال عرض الصورة الكاملة
-    function openFullImage(src) {
-      document.getElementById("fullImage").src = src;
-      document.getElementById("fullImageModal").classList.remove("hidden");
-    }
-    
-    function closeFullImage() {
-      document.getElementById("fullImageModal").classList.add("hidden");
-    }
-    
-    // إرسال شكوى الدعم
-    function sendUserSupportTicket() {
-      const phone = document.getElementById("supportPhone").value.trim();
-      const type = document.getElementById("supportType").value;
-      const message = document.getElementById("supportMessage").value.trim();
-      
-      if (!phone || !message) {
-        showAlert('يرجى إدخال رقم الهاتف والرسالة', 'error');
-        return;
-      }
-      
-      // التحقق من رقم هاتف ليبي (يبدأ بـ 09 ويتبعه 8 أرقام)
-      if (!/^09\d{8}$/.test(phone)) {
-        showAlert('رقم الهاتف غير صحيح (يجب أن يبدأ بـ 09 ويتبعه 8 أرقام)', 'error');
-        return;
-      }
-      
-      const ticket = {
-        phone: phone,
-        type: type,
-        message: message,
-        timestamp: Date.now(),
-        workshopId: currentWorkshopId || 'unknown',
-        workshopName: currentWorkshopId ? 'تم البحث عن سيارة' : 'غير محدد',
-        carNumber: currentCarData?.number || 'غير محدد',
-        status: 'جديد'
-      };
-      
-      db.ref("supportTickets").push(ticket)
-        .then(() => {
-          showAlert('تم إرسال الشكوى إلى مركز الدعم بنجاح', 'success');
-          document.getElementById("supportPhone").value = "";
-          document.getElementById("supportMessage").value = "";
-          closeSupportModalAndShowButton();
-        })
-        .catch(() => showAlert('فشل في إرسال الشكوى', 'error'));
-    }
-    
-    // تفعيل البحث عند الضغط على Enter
-    document.addEventListener('DOMContentLoaded', () => {
-      const carNumberInput = document.getElementById("searchCarNumber");
-      const carPasswordInput = document.getElementById("searchCarPassword");
-      
-      const handleEnter = (e) => {
-        if (e.key === 'Enter') {
-          searchCar();
-        }
-      };
-      
-      carNumberInput.addEventListener('keypress', handleEnter);
-      carPasswordInput.addEventListener('keypress', handleEnter);
+    document.addEventListener('DOMContentLoaded', () => { 
+      const carNumberInput = document.getElementById("searchCarNumber"); 
+      const carPasswordInput = document.getElementById("searchCarPassword"); 
+      const handleEnter = (e) => { if (e.key === 'Enter') searchCar(); }; 
+      carNumberInput.addEventListener('keypress', handleEnter); 
+      carPasswordInput.addEventListener('keypress', handleEnter); 
     });
   </script>
 </body>
